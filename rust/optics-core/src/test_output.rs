@@ -1,4 +1,5 @@
 use crate::{
+    accumulator::{merkle::MerkleTree, TREE_DEPTH},
     utils::{destination_and_sequence, home_domain_hash},
     FailureNotification, OpticsMessage, Update,
 };
@@ -16,15 +17,17 @@ pub mod output_functions {
 
     /// Output proof to /vector/proof.json
     pub fn output_message_and_leaf() {
+        let mut tree = MerkleTree::create(&[], TREE_DEPTH);
+
         let optics_message = OpticsMessage {
             origin: 1000,
             sender: H256::from(
-                H160::from_str("0x1111111111111111111111111111111111111111").unwrap(),
+                H160::from_str("0xd753c12650c280383Ce873Cc3a898F6f53973d16").unwrap(),
             ),
             sequence: 1,
             destination: 2000,
             recipient: H256::from(
-                H160::from_str("0x2222222222222222222222222222222222222222").unwrap(),
+                H160::from_str("0xa779C1D17bC5230c07afdC51376CAC1cb3Dd5314").unwrap(),
             ),
             body: "message".as_bytes().to_vec(),
         };
@@ -45,6 +48,23 @@ pub mod output_functions {
             .create(true)
             .truncate(true)
             .open("../../vectors/messageTestCases.json")
+            .expect("Failed to open/create file");
+
+        file.write_all(json.as_bytes())
+            .expect("Failed to write to file");
+
+        tree.push_leaf(optics_message.to_leaf(), TREE_DEPTH)
+            .unwrap();
+        let proof = tree.generate_proof(0, TREE_DEPTH);
+
+        let proof_json = json!({ "leaf": proof.0, "path": proof.1 });
+        let json = json!({ "proof": proof_json }).to_string();
+
+        let mut file = OpenOptions::new()
+            .write(true)
+            .create(true)
+            .truncate(true)
+            .open("../../vectors/proof.json")
             .expect("Failed to open/create file");
 
         file.write_all(json.as_bytes())
