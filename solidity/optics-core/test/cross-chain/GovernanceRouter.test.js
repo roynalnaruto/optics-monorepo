@@ -9,6 +9,7 @@ const {
   getReplica,
   getGovernanceRouter,
 } = require('./deployCrossChainTest');
+const { proof } = require('../../../../vectors/proof.json');
 
 /*
  * Deploy the full Optics suite on two chains
@@ -89,29 +90,29 @@ describe('GovernanceRouter', async () => {
     const controller = null;
 
     // Deploy single replica on nonGovernorDomain that will not be enrolled
-    const { contracts: unenrolledReplicaContracts } =
-      await optics.deployUpgradeSetupAndProxy(
-        'TestReplica',
-        [nonGovernorDomain],
-        [
-          nonGovernorDomain,
-          updater.signer.address,
-          initialCurrentRoot,
-          optimisticSeconds,
-          initialLastProcessed,
-        ],
-        controller,
-        'initialize(uint32, address, bytes32, uint256, uint256)',
-      );
+    const {
+      contracts: unenrolledReplicaContracts,
+    } = await optics.deployUpgradeSetupAndProxy(
+      'TestReplica',
+      [nonGovernorDomain],
+      [
+        nonGovernorDomain,
+        updater.signer.address,
+        initialCurrentRoot,
+        optimisticSeconds,
+        initialLastProcessed,
+      ],
+      controller,
+      'initialize(uint32, address, bytes32, uint256, uint256)',
+    );
     const unenrolledReplica =
       unenrolledReplicaContracts.proxyWithImplementation;
 
     // Create TransferGovernor message
-    const transferGovernorMessage =
-      optics.GovernanceRouter.formatTransferGovernor(
-        thirdDomain,
-        optics.ethersAddressToBytes32(secondGovernor),
-      );
+    const transferGovernorMessage = optics.GovernanceRouter.formatTransferGovernor(
+      thirdDomain,
+      optics.ethersAddressToBytes32(secondGovernor),
+    );
 
     const opticsMessage = await formatOpticsMessage(
       unenrolledReplica,
@@ -131,11 +132,10 @@ describe('GovernanceRouter', async () => {
 
   it('Rejects message not from governor router', async () => {
     // Create TransferGovernor message
-    const transferGovernorMessage =
-      optics.GovernanceRouter.formatTransferGovernor(
-        nonGovernorDomain,
-        optics.ethersAddressToBytes32(nonGovernorRouter.address),
-      );
+    const transferGovernorMessage = optics.GovernanceRouter.formatTransferGovernor(
+      nonGovernorDomain,
+      optics.ethersAddressToBytes32(nonGovernorRouter.address),
+    );
 
     const opticsMessage = await formatOpticsMessage(
       governorReplicaOnNonGovernorChain,
@@ -149,10 +149,12 @@ describe('GovernanceRouter', async () => {
 
     // Expect replica processing to fail when nonGovernorRouter reverts in
     // handle
-    let [success, ret] =
-      await nonGovernorReplicaOnGovernorChain.callStatic.testProcess(
-        opticsMessage,
-      );
+    let [
+      success,
+      ret,
+    ] = await nonGovernorReplicaOnGovernorChain.callStatic.testProcess(
+      opticsMessage,
+    );
     expect(success).to.be.false;
     expect(ret).to.equal('!governorRouter');
   });
@@ -166,11 +168,10 @@ describe('GovernanceRouter', async () => {
     );
 
     // Create TransferGovernor message
-    const transferGovernorMessage =
-      optics.GovernanceRouter.formatTransferGovernor(
-        thirdDomain,
-        optics.ethersAddressToBytes32(thirdRouter.address),
-      );
+    const transferGovernorMessage = optics.GovernanceRouter.formatTransferGovernor(
+      thirdDomain,
+      optics.ethersAddressToBytes32(thirdRouter.address),
+    );
 
     const opticsMessage = await formatOpticsMessage(
       governorReplicaOnNonGovernorChain,
@@ -231,8 +232,9 @@ describe('GovernanceRouter', async () => {
 
     const TestRecipient = await ethers.getContractFactory('TestRecipient');
     const string = 'String!';
-    const receiveStringFunction =
-      TestRecipient.interface.getFunction('receiveString');
+    const receiveStringFunction = TestRecipient.interface.getFunction(
+      'receiveString',
+    );
     const receiveStringEncoded = TestRecipient.interface.encodeFunctionData(
       receiveStringFunction,
       [string],
@@ -261,10 +263,12 @@ describe('GovernanceRouter', async () => {
     );
 
     // Expect successful tx
-    let [success, ret] =
-      await governorReplicaOnNonGovernorChain.callStatic.testProcess(
-        opticsMessage,
-      );
+    let [
+      success,
+      ret,
+    ] = await governorReplicaOnNonGovernorChain.callStatic.testProcess(
+      opticsMessage,
+    );
     expect(success).to.be.true;
     expect(ret).to.be.empty;
   });
@@ -306,11 +310,10 @@ describe('GovernanceRouter', async () => {
     // update governor chain home
     await governorHome.update(currentRoot, newRoot, signature);
 
-    const transferGovernorMessage =
-      optics.GovernanceRouter.formatTransferGovernor(
-        nonGovernorDomain,
-        optics.ethersAddressToBytes32(secondGovernor),
-      );
+    const transferGovernorMessage = optics.GovernanceRouter.formatTransferGovernor(
+      nonGovernorDomain,
+      optics.ethersAddressToBytes32(secondGovernor),
+    );
 
     const opticsMessage = formatOpticsMessage(
       governorReplicaOnNonGovernorChain,
@@ -346,5 +349,22 @@ describe('GovernanceRouter', async () => {
     );
     // Governor HAS been transferred on original non-governor domain
     await expectGovernor(nonGovernorRouter, nonGovernorDomain, secondGovernor);
+  });
+
+  it('Calculates message leaf correctly', async () => {
+    const opticsMessage = optics.formatMessage(
+      1000,
+      '0xd753c12650c280383Ce873Cc3a898F6f53973d16',
+      1,
+      2000,
+      '0xa779C1D17bC5230c07afdC51376CAC1cb3Dd5314',
+      '0x01010000000000000000000000006b39b761b1b64c8c095bf0e3bb0c6a74705b4788000000000000000000000000000000000000000000000000000000000000004499a88ec400000000000000000000000024432a08869578aaf4d1eada12e1e78f171b1a2b000000000000000000000000f66cfdf074d2ffd6a4037be3a669ed04380aef2b',
+    );
+
+    console.log(opticsMessage);
+
+    const { leaf } = proof;
+    const messageLeaf = optics.messageToLeaf(opticsMessage);
+    expect(messageLeaf).to.equal(leaf);
   });
 });

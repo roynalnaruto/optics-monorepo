@@ -7,5 +7,6 @@ fn main() {
         output_signed_updates();
         output_signed_failure_notifications();
         output_message_and_leaf();
+        output_message_proof();
     }
 }
