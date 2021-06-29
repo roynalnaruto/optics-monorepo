@@ -2,7 +2,7 @@ import { ethers } from 'ethers/lib';
 import * as proxyUtils from '../../optics-deploy/src/proxyUtils';
 import * as contracts from '../../typechain/optics-core';
 import * as chain from '../../optics-deploy/src/chain';
-import { config } from '../../../chainConfig';
+import { localConfig } from '../../../chainConfig';
 import {
   devDeployHome,
   deployUpdaterManager,
@@ -53,7 +53,7 @@ describe('Home', async () => {
     [signer, fakeSigner, recipient] = provider.getWallets();
     updater = await optics.Updater.fromSigner(signer, localDomain);
 
-    deploy = chain.freshDeploy(config);
+    deploy = chain.freshDeploy(localConfig);
     // deploy = chain.freshTestDeploy(config, provider, signer);
 
     await deployUpdaterManager(deploy);
