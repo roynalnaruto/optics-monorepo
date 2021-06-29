@@ -12,7 +12,6 @@ export async function deployUpgradeBeaconController(deploy: Deploy) {
   let factory = new contracts.UpgradeBeaconController__factory(
     deploy.chain.deployer,
   );
-  deploy.contracts.upgradeBeaconController = await factory.deploy();
   deploy.contracts.upgradeBeaconController = await factory.deploy({
     gasPrice: deploy.chain.gasPrice,
   });
@@ -27,7 +26,6 @@ export async function deployUpgradeBeaconController(deploy: Deploy) {
  */
 export async function deployUpdaterManager(deploy: Deploy) {
   let factory = new contracts.UpdaterManager__factory(deploy.chain.deployer);
-  deploy.contracts.updaterManager = await factory.deploy(deploy.chain.updater);
   deploy.contracts.updaterManager = await factory.deploy(deploy.chain.updater, {
     gasPrice: deploy.chain.gasPrice,
   });
@@ -125,12 +123,13 @@ export async function devDeployNewReplica(
 
   // Workaround because typechain doesn't handle overloads well, and Replica
   // has two public initializers
-  const iface = replica.createInterface();
-  const initIFace = new ethers.utils.Interface([
-    iface.functions['initialize(uint32,address,bytes32,uint256,uint256)'],
-  ]);
+  // const iface = replica.createInterface();
+  // const initIFace = new ethers.utils.Interface([
+  //   iface.functions['initialize(uint32,address,bytes32,uint256,uint256)'],
+  // ]);
+  // const iface = await replica.getInterface();
 
-  const initData = initIFace.encodeFunctionData('initialize', [
+  const initData = factory.interface.encodeFunctionData('initialize', [
     remote.chain.domain,
     remote.chain.updater,
     ethers.constants.HashZero, // TODO: allow configuration
